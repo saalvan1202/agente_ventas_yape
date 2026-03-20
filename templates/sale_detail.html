@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Venta #{{ sale.id }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <a href="/sales" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Volver al listado</a>
+    
+    {% set total_paid = sale.payments | map(attribute='total_paid') | sum %}
+    {% set balance = sale.total_amount - total_paid %}
+
+    <div class="grid">
+        <div class="card animate-fade-in" style="grid-column: span 2;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+                <div>
+                    <h1>Venta #{{ sale.id }}</h1>
+                    <p style="color: var(--text-muted);">{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                </div>
+                <div>
+                    {% if balance <= 0.01 %}
+                        <span class="badge badge-success" style="font-size: 1rem; padding: 0.5rem 1.5rem;">PAGADO</span>
+                    {% elif total_paid > 0 %}
+                        <span class="badge" style="background: rgba(255, 191, 0, 0.1); color: #fbbf24; border: 1px solid rgba(255, 191, 0, 0.2); font-size: 1rem; padding: 0.5rem 1.5rem;">PAGO PARCIAL</span>
+                    {% else %}
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); font-size: 1rem; padding: 0.5rem 1.5rem;">PENDIENTE</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                <div class="card" style="padding: 1rem; background: rgba(255,255,255,0.02);">
+                    <p style="color: var(--text-muted); font-size: 0.8rem;">TOTAL VENTA</p>
+                    <p style="font-size: 1.25rem; font-weight: 800;">S/ {{ "{:.2f}".format(sale.total_amount) }}</p>
+                </div>
+                <div class="card" style="padding: 1rem; background: rgba(255,255,255,0.02);">
+                    <p style="color: var(--text-muted); font-size: 0.8rem;">TOTAL PAGADO</p>
+                    <p style="font-size: 1.25rem; font-weight: 800; color: #4ade80;">S/ {{ "{:.2f}".format(total_paid) }}</p>
+                </div>
+                <div class="card" style="padding: 1rem; background: rgba(255,255,255,0.02);">
+                    <p style="color: var(--text-muted); font-size: 0.8rem;">SALDO PENDIENTE</p>
+                    <p style="font-size: 1.25rem; font-weight: 800; color: #f87171;">S/ {{ "{:.2f}".format(balance) }}</p>
+                </div>
+            </div>
+
+            <h3>Productos</h3>
+            <div style="margin-bottom: 2rem;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid var(--border); color: var(--text-muted);">
+                            <th style="padding: 0.75rem 0;">Producto</th>
+                            <th style="padding: 0.75rem 0; text-align: center;">Cant.</th>
+                            <th style="padding: 0.75rem 0; text-align: right;">Unitario</th>
+                            <th style="padding: 0.75rem 0; text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detail in sale.details %}
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 1rem 0;">{{ detail.product.name }}</td>
+                            <td style="padding: 1rem 0; text-align: center;">{{ detail.quantity }}</td>
+                            <td style="padding: 1rem 0; text-align: right;">S/ {{ "{:.2f}".format(detail.unit_price) }}</td>
+                            <td style="padding: 1rem 0; text-align: right; font-weight: 600;">S/ {{ "{:.2f}".format(detail.quantity * detail.unit_price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+                <h3>Historial de Pagos</h3>
+                {% if balance > 0.01 %}
+                    <a href="/sales/{{ sale.id }}/payment" class="btn btn-primary" style="padding: 0.5rem 1rem;">+ Registrar Pago</a>
+                {% endif %}
+            </div>
+
+            <div style="margin-top: 1rem;">
+                {% if not sale.payments %}
+                    <p style="color: var(--text-muted); font-style: italic;">No hay pagos registrados para esta venta.</p>
+                {% else %}
+                    {% for payment in sale.payments %}
+                        {% for detail in payment.details %}
+                        <div style="background: var(--glass-bg); padding: 1rem; border-radius: 1rem; border: 1px solid var(--glass-border); margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span class="badge" style="background: var(--primary); color: white;">{{ detail.destino }}</span>
+                                <span style="font-weight: 800; color: #4ade80;">{{ detail.monto }}</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.85rem;">
+                                <p><span style="color: var(--text-muted);">Nombre:</span> {{ detail.nombre }}</p>
+                                <p><span style="color: var(--text-muted);">Fecha:</span> {{ detail.fecha }} - {{ detail.hora }}</p>
+                                {% if detail.num_operacion %}
+                                <p><span style="color: var(--text-muted);">N° Op:</span> {{ detail.num_operacion }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

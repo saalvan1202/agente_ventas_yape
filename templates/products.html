@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Productos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+
+    .product-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 1.5rem;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        border-color: var(--primary-light);
+    }
+
+    .gallery-container {
+        position: relative;
+        height: 200px;
+        background: #1e293b;
+        overflow: hidden;
+    }
+
+    .gallery-slide {
+        display: flex;
+        transition: transform 0.5s ease;
+        height: 100%;
+    }
+
+    .gallery-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .gallery-dots {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 5px;
+    }
+
+    .dot {
+        width: 8px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .dot.active {
+        background: white;
+    }
+
+    .product-info {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .product-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .product-price {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--secondary);
+    }
+
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+    <h1>Nuestros Productos</h1>
+    <a href="/products/new" class="btn btn-primary">+ Nuevo Producto</a>
+</div>
+
+{% if not products %}
+    <div class="card animate-fade-in" style="text-align: center; padding: 4rem;">
+        <p style="color: var(--text-muted); font-size: 1.2rem;">Aún no hay productos registrados.</p>
+        <br>
+        <a href="/products/new" class="btn btn-primary">Crear el primer producto</a>
+    </div>
+{% else %}
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="gallery-container">
+                <div class="gallery-slide" id="gallery-{{ product.id }}">
+                    {% if product.images %}
+                        {% for image in product.images %}
+                            <img src="/static/{{ image.image_path }}" alt="{{ product.name }}">
+                        {% endfor %}
+                    {% else %}
+                        <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="No image">
+                    {% endif %}
+                </div>
+                {% if product.images|length > 1 %}
+                <div class="gallery-dots" id="dots-{{ product.id }}">
+                    {% for i in range(product.images|length) %}
+                        <div class="dot {% if loop.first %}active{% endif %}" onclick="showSlide({{ product.id }}, {{ loop.index0 }})"></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <div>
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <p class="product-price">S/ {{ "{:.2f}".format(product.price) }}</p>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <a href="/sales/new" class="btn btn-secondary" style="width: 100%; text-align: center;">Vender</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showSlide(productId, slideIndex) {
+        const slide = document.getElementById(`gallery-${productId}`);
+        const dots = document.querySelectorAll(`#dots-${productId} .dot`);
+        
+        slide.style.transform = `translateX(-${slideIndex * 100}%)`;
+        
+        dots.forEach((dot, index) => {
+            if (index === slideIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+</script>
+{% endblock %}

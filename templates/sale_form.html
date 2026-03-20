@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Venta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-select-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr auto;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        background: var(--glass-bg);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--glass-border);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <a href="/sales" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Volver</a>
+    <div class="card">
+        <h1>Nueva Venta</h1>
+        <form action="/sales" method="post" id="sale-form">
+            <div id="product-list">
+                <div class="product-select-row">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Producto</label>
+                        <select name="product_ids" class="form-control" required>
+                            <option value="">Selecciona un producto</option>
+                            {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.name }} - S/ {{ product.price }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Cantidad</label>
+                        <input type="number" name="quantities" class="form-control" value="1" min="1" required>
+                    </div>
+                    <button type="button" class="btn btn-secondary" style="padding: 0.75rem;" onclick="removeRow(this)">X</button>
+                </div>
+            </div>
+            
+            <div style="margin: 1.5rem 0;">
+                <button type="button" class="btn btn-secondary" onclick="addRow()">+ Agregar otro producto</button>
+            </div>
+
+            <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem;">Continuar al Pago</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function addRow() {
+        const container = document.getElementById('product-list');
+        const firstRow = container.querySelector('.product-select-row');
+        const newRow = firstRow.cloneNode(true);
+        newRow.querySelector('select').value = "";
+        newRow.querySelector('input').value = "1";
+        container.appendChild(newRow);
+    }
+
+    function removeRow(btn) {
+        const rows = document.querySelectorAll('.product-select-row');
+        if (rows.length > 1) {
+            btn.closest('.product-select-row').remove();
+        } else {
+            alert("Debe haber al menos un producto en la venta.");
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Ventas{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+    <h1>Historial de Ventas</h1>
+    <a href="/sales/new" class="btn btn-primary">+ Nueva Venta</a>
+</div>
+
+{% if not sales %}
+    <div class="card animate-fade-in" style="text-align: center; padding: 4rem;">
+        <p style="color: var(--text-muted); font-size: 1.2rem;">No se han registrado ventas aún.</p>
+        <br>
+        <a href="/sales/new" class="btn btn-primary">Realizar primera venta</a>
+    </div>
+{% else %}
+    <div class="card animate-fade-in">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+                    <th style="padding: 1rem;">ID</th>
+                    <th style="padding: 1rem;">Fecha</th>
+                    <th style="padding: 1rem;">Monto Total</th>
+                    <th style="padding: 1rem;">Estado de Pago</th>
+                    <th style="padding: 1rem;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 1rem;">#{{ sale.id }}</td>
+                    <td style="padding: 1rem;">{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="padding: 1rem;">S/ {{ "{:.2f}".format(sale.total_amount) }}</td>
+                    <td style="padding: 1rem;">
+                        {% if sale.payments %}
+                            <span class="badge badge-success">Pagado</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2);">Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem;">
+                        <a href="/sales/{{ sale.id }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Ver Detalle</a>
+                        {% if not sale.payments %}
+                            <a href="/sales/{{ sale.id }}/payment" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-left: 0.5rem;">Pagar</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

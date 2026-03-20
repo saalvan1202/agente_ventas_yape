@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Pago{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <a href="/sales/{{ sale.id }}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Cancelar</a>
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div id="method-icon" style="background: #7422ed; width: 60px; height: 60px; border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <span id="method-initial" style="color: white; font-weight: 800; font-size: 1.5rem;">Y</span>
+            </div>
+            <h1>Registrar Pago</h1>
+            <p style="color: var(--text-muted);">Saldo pendiente: S/ {{ "{:.2f}".format(balance) }}</p>
+        </div>
+
+        <form action="/payments" method="post">
+            <input type="hidden" name="sale_id" value="{{ sale.id }}">
+            
+            <div class="form-group">
+                <label>Método de Pago</label>
+                <select id="payment-method" name="destino" class="form-control" onchange="toggleMethod(this.value)">
+                    <option value="Yape">Yape</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Plin">Plin</option>
+                    <option value="Transferencia">Transferencia</option>
+                </select>
+            </div>
+
+            <div id="yape-fields">
+                <div class="form-group">
+                    <label>Nombre del Emisor</label>
+                    <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej. Jose Pad*">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="text" name="fecha" id="fecha" class="form-control" placeholder="Ej. 20 mar. 2026">
+                    </div>
+                    <div class="form-group">
+                        <label>Hora</label>
+                        <input type="text" name="hora" id="hora" class="form-control" placeholder="Ej. 12:15 p. m.">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>N° Operación</label>
+                        <input type="text" name="num_operacion" id="num_operacion" class="form-control" placeholder="13014372">
+                    </div>
+                    <div class="form-group">
+                        <label>Cod. Seguridad</label>
+                        <input type="text" name="cod_seguridad" id="cod_seguridad" class="form-control" placeholder="372">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Monto a Pagar</label>
+                <input type="text" name="monto" id="monto-pago" class="form-control" value="S/ {{ "{:.2f}".format(balance) }}" required>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Puedes editar el monto si es un pago parcial.</p>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; height: 3.5rem; font-size: 1.1rem;">Confirmar Pago</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleMethod(method) {
+        const yapeFields = document.getElementById('yape-fields');
+        const icon = document.getElementById('method-icon');
+        const initial = document.getElementById('method-initial');
+        const inputs = yapeFields.querySelectorAll('input');
+
+        initial.innerText = method.charAt(0);
+        
+        if (method === 'Yape' || method === 'Plin') {
+            yapeFields.style.display = 'block';
+            icon.style.background = method === 'Yape' ? '#7422ed' : '#00bfff';
+            inputs.forEach(i => i.required = true);
+        } else {
+            yapeFields.style.display = 'none';
+            icon.style.background = '#22c55e';
+            inputs.forEach(i => i.required = false);
+            // Pre-fill fields for Cash to avoid empty DB issues if they were required
+            document.getElementById('nombre').value = method === 'Efectivo' ? 'Cliente' : '-';
+            document.getElementById('fecha').value = new Date().toLocaleDateString('es-PE');
+            document.getElementById('hora').value = new Date().toLocaleTimeString('es-PE');
+        }
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+        toggleMethod(document.getElementById('payment-method').value);
+    });
+</script>
+{% endblock %}

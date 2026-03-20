@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Producto{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <a href="/" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Volver</a>
+    <div class="card">
+        <h1>Registrar Producto</h1>
+        <form action="/products" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="name">Nombre del Producto</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Ej. Zapatillas Nike Air" required>
+            </div>
+            <div class="form-group">
+                <label for="price">Precio (S/)</label>
+                <input type="number" step="0.01" id="price" name="price" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+                <label for="images">Imágenes (Puedes seleccionar varias)</label>
+                <input type="file" id="images" name="images" class="form-control" accept="image/*" multiple required>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Selecciona una o más fotos para la galería del producto.</p>
+            </div>
+            <div style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar Producto</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
