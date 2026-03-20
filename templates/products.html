@@ -135,8 +135,11 @@
                     <h3 class="product-name">{{ product.name }}</h3>
                     <p class="product-price">S/ {{ "{:.2f}".format(product.price) }}</p>
                 </div>
-                <div style="margin-top: 1rem;">
-                    <a href="/sales/new" class="btn btn-secondary" style="width: 100%; text-align: center;">Vender</a>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <a href="/sales/new" class="btn btn-secondary" style="flex: 1; text-align: center;">Vender</a>
+                    <button class="btn btn-secondary" onclick="copyImageLink({{ product.id }})" title="Copiar link de imagen">
+                        🔗
+                    </button>
                 </div>
             </div>
         </div>
@@ -159,6 +162,12 @@
             } else {
                 dot.classList.remove('active');
             }
+        });
+    }
+    function copyImageLink(productId) {
+        const url = `${window.location.origin}/products/${productId}/main-image`;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("¡Link de imagen copiado al portapapeles!");
         });
     }
 </script>

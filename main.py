@@ -157,6 +157,33 @@ async def record_payment(
     
     return RedirectResponse(url=f"/sales/{sale.id}", status_code=303)
 
+@app.get("/products/{product_id}/main-image")
+async def get_main_image(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product or not product.images:
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    image_path = f"static/{product.images[0].image_path}"
+    if os.path.exists(image_path):
+        from fastapi.responses import FileResponse
+        return FileResponse(image_path)
+    
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/api/products")
+async def api_get_products(request: Request, db: Session = Depends(get_db)):
+    products = db.query(models.Product).all()
+    base_url = str(request.base_url).rstrip('/')
+    result = []
+    for p in products:
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "images": [f"{base_url}/static/{img.image_path}" for img in p.images]
+        })
+    return result
+
 @app.get("/sales/{sale_id}", response_class=HTMLResponse)
 async def sale_detail_view(sale_id: int, request: Request, db: Session = Depends(get_db)):
     sale = db.query(models.Sale).filter(models.Sale.id == sale_id).first()
