@@ -170,18 +170,71 @@ async def get_main_image(product_id: int, db: Session = Depends(get_db)):
     
     raise HTTPException(status_code=404, detail="File not found")
 
+@app.get("/products/share-all")
+async def share_all_products_wsp(number: str, db: Session = Depends(get_db)):
+    import requests
+    import base64
+    products = db.query(models.Product).all()
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+    
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODU3MyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.dKmKFEJ438eSF6gx4L52asNttTiVEbBd9RMxYj3GyE0"
+    instance_name = os.getenv("WSP_INSTANCE", "default-instance")
+    url = f"https://apiwsp.factiliza.com/v1/message/sendmedia/{instance_name}"
+    
+    responses = []
+    for product in products:
+        if not product.images:
+            print("sin imagen", product.name)
+            continue
+            
+        image_path = f"static/{product.images[0].image_path}"
+        if not os.path.exists(image_path):
+            print("no existe la imagen", image_path)
+            continue
+            
+        with open(image_path, "rb") as img_file:
+            b64_string = base64.b64encode(img_file.read()).decode('utf-8')
+            
+        caption = f"🛍️ *{product.name}*\n💰 Precio: S/ {product.price:.2f}"
+        
+        payload = {
+            "number": number,
+            "mediatype": "image",
+            "media": b64_string,
+            "filename": f"{product.name}.jpg",
+            "caption": caption
+        }
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            res = requests.post(url, json=payload, headers=headers)
+            responses.append({"product": product.name, "response": res.json()})
+        except Exception as e:
+            responses.append({"product": product.name, "error": str(e)})
+            
+    return {"status": "completed", "results": responses}
+
 @app.get("/products/{product_id}/share")
 async def share_product_wsp(product_id: int, number: str, request: Request, db: Session = Depends(get_db)):
     import requests
+    import base64
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    if not product or not product.images:
+        raise HTTPException(status_code=404, detail="Product or images not found")
     
-    base_url = str(request.base_url).rstrip('/')
-    media_url = f"{base_url}/products/{product.id}/main-image"
+    # Leer imagen local y convertir a Base64
+    image_path = f"static/{product.images[0].image_path}"
+    if not os.path.exists(image_path):
+        raise HTTPException(status_code=404, detail="Image file not found")
+    
+    with open(image_path, "rb") as img_file:
+        b64_string = base64.b64encode(img_file.read()).decode('utf-8')
     
     # Configuración de WSP (Factiliza)
-    # NOTA: En producción, estos valores deberían ir en .env
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODU3MyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.dKmKFEJ438eSF6gx4L52asNttTiVEbBd9RMxYj3GyE0"
     instance_name = os.getenv("WSP_INSTANCE", "default-instance")
     url = f"https://apiwsp.factiliza.com/v1/message/sendmedia/{instance_name}"
@@ -191,7 +244,7 @@ async def share_product_wsp(product_id: int, number: str, request: Request, db: 
     payload = {
         "number": number,
         "mediatype": "image",
-        "media": media_url,
+        "media": b64_string,
         "filename": f"{product.name}.jpg",
         "caption": caption
     }

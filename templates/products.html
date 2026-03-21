@@ -99,7 +99,12 @@
 {% block content %}
 <div class="header-actions">
     <h1>Nuestros Productos</h1>
-    <a href="/products/new" class="btn btn-primary">+ Nuevo Producto</a>
+    <div style="display: flex; gap: 1rem;">
+        <button class="btn btn-secondary" onclick="shareAllWhatsApp()" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: rgba(34, 197, 94, 0.3);">
+            📦 Enviar Catálogo
+        </button>
+        <a href="/products/new" class="btn btn-primary">+ Nuevo Producto</a>
+    </div>
 </div>
 
 {% if not products %}
@@ -189,6 +194,33 @@
                 .catch(err => {
                     alert("Ocurrió un error en la conexión.");
                     console.error(err);
+                });
+        }
+    }
+
+    function shareAllWhatsApp() {
+        const number = prompt("Ingresa el número de WhatsApp para enviar TODO el catálogo (ej: 51987654321):");
+        if (number) {
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ Enviando...";
+            btn.disabled = true;
+
+            fetch(`/products/share-all?number=${number}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        alert("¡Catálogo enviado completamente!");
+                    } else {
+                        alert("Hubo un problema al enviar algunos productos.");
+                    }
+                })
+                .catch(err => {
+                    alert("Ocurrió un error en el servidor.");
+                })
+                .finally(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                 });
         }
     }

@@ -19,7 +19,10 @@ if not SQLALCHEMY_DATABASE_URL:
     # Pero vamos a dejar que falle o que el usuario lo configure en .env
     SQLALCHEMY_DATABASE_URL = "sqlite:///./temp.db" # Fallback temporal para evitar errores inmediatos si no hay .env
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
