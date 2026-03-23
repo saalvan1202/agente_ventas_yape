@@ -1,251 +1,298 @@
 {% extends "base.html" %}
 
-{% block title %}Productos{% endblock %}
+{% block title %}Catálogo de Productos{% endblock %}
+{% block page_header %}Catálogo de Productos{% endblock %}
 
 {% block extra_css %}
 <style>
     .product-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 2rem;
+        gap: 1.5rem;
     }
 
     .product-card {
-        background: var(--card-bg);
+        background: white;
+        border-radius: var(--radius-lg);
         border: 1px solid var(--border);
-        border-radius: 1.5rem;
         overflow: hidden;
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: all 0.3s ease;
         display: flex;
         flex-direction: column;
     }
 
     .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-        border-color: var(--primary-light);
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary);
     }
 
-    .gallery-container {
+    .product-image-container {
         position: relative;
-        height: 200px;
-        background: #1e293b;
+        aspect-ratio: 4/3;
         overflow: hidden;
+        background: #F1F5F9;
     }
 
-    .gallery-slide {
-        display: flex;
-        transition: transform 0.5s ease;
-        height: 100%;
-    }
-
-    .gallery-slide img {
+    .product-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        flex-shrink: 0;
+        transition: transform 0.5s ease;
     }
 
-    .gallery-dots {
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 5px;
-    }
-
-    .dot {
-        width: 8px;
-        height: 8px;
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        cursor: pointer;
-    }
-
-    .dot.active {
-        background: white;
+    .product-card:hover .product-image {
+        transform: scale(1.05);
     }
 
     .product-info {
-        padding: 1.5rem;
+        padding: 1.25rem;
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
     }
 
     .product-name {
-        font-size: 1.25rem;
-        font-weight: 600;
+        font-size: 1.1rem;
+        font-weight: 700;
         margin-bottom: 0.5rem;
+        color: var(--text-main);
     }
 
     .product-price {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 800;
-        color: var(--secondary);
+        color: var(--primary);
+        margin-bottom: 1rem;
     }
 
-    .header-actions {
+    .product-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        margin-top: auto;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .share-menu {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .catalog-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 2rem;
     }
+
+    /* Modal for details */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: var(--radius-lg);
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        padding: 2rem;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        cursor: pointer;
+        color: var(--text-muted);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="header-actions">
-    <h1>Nuestros Productos</h1>
+<div class="catalog-header">
+    <div>
+        <p style="color: var(--text-muted); font-weight: 500;">Administra tus productos y existencias</p>
+    </div>
     <div style="display: flex; gap: 1rem;">
-        <button class="btn btn-secondary" onclick="shareAllWhatsApp()" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: rgba(34, 197, 94, 0.3);">
-            📦 Enviar Catálogo
+        <button class="btn btn-secondary" onclick="shareAllWhatsApp()" id="share-all-btn">
+            <i data-lucide="share-2"></i>
+            Enviar Catálogo
         </button>
-        <a href="/products/new" class="btn btn-primary">+ Nuevo Producto</a>
+        <a href="/products/new" class="btn btn-primary">
+            <i data-lucide="plus"></i>
+            Nuevo Producto
+        </a>
     </div>
 </div>
 
-{% if not products %}
-    <div class="card animate-fade-in" style="text-align: center; padding: 4rem;">
-        <p style="color: var(--text-muted); font-size: 1.2rem;">Aún no hay productos registrados.</p>
-        <br>
-        <a href="/products/new" class="btn btn-primary">Crear el primer producto</a>
-    </div>
-{% else %}
-    <div class="product-grid">
-        {% for product in products %}
-        <div class="product-card">
-            <div class="gallery-container">
-                <div class="gallery-slide" id="gallery-{{ product.id }}">
-                    {% if product.images %}
-                        {% for image in product.images %}
-                            <img src="/static/{{ image.image_path }}" alt="{{ product.name }}">
-                        {% endfor %}
-                    {% else %}
-                        <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="No image">
-                    {% endif %}
-                </div>
-                {% if product.images|length > 1 %}
-                <div class="gallery-dots" id="dots-{{ product.id }}">
-                    {% for i in range(product.images|length) %}
-                        <div class="dot {% if loop.first %}active{% endif %}" onclick="showSlide({{ product.id }}, {{ loop.index0 }})"></div>
-                    {% endfor %}
-                </div>
+<div class="product-grid">
+    {% for product in products %}
+    <div class="product-card">
+        <a href="/products/{{ product.id }}" style="text-decoration: none; color: inherit;">
+            <div class="product-image-container">
+                {% if product.images %}
+                    {% set main_img = product.images|selectattr("is_main", "equalto", True)|first %}
+                    {% if not main_img %}{% set main_img = product.images[0] %}{% endif %}
+                    <img src="/static/{{ main_img.image_path }}" alt="{{ product.name }}" class="product-image">
+                {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                        <i data-lucide="image-off" style="width: 48px; height: 48px;"></i>
+                    </div>
                 {% endif %}
+                <div style="position: absolute; top: 0.75rem; right: 0.75rem;">
+                    <span class="badge badge-success" style="box-shadow: var(--shadow);">S/ {{ "{:.2f}".format(product.price) }}</span>
+                </div>
             </div>
             <div class="product-info">
-                <div>
-                    <h3 class="product-name">{{ product.name }}</h3>
-                    <p class="product-price">S/ {{ "{:.2f}".format(product.price) }}</p>
-                </div>
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <a href="/sales/new" class="btn btn-secondary" style="flex: 1; text-align: center;">Vender</a>
-                    <a href="/products/{{ product.id }}/edit" class="btn btn-secondary" title="Editar Producto" style="display: flex; align-items: center; justify-content: center;">
-                        ✏️
-                    </a>
-                    <button class="btn btn-secondary" onclick="shareWhatsApp({{ product.id }})" title="Enviar por WhatsApp" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: rgba(34, 197, 94, 0.3);">
-                        Yape
-                    </button>
-                    <button class="btn btn-secondary" onclick="shareGalleryWhatsApp({{ product.id }})" title="Enviar Galería" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">
-                        Galería
-                    </button>
-                    <button class="btn btn-secondary" onclick="copyImageLink({{ product.id }})" title="Copiar link de imagen" style="display: flex; align-items: center; justify-content: center;">
-                        🔗
-                    </button>
-                </div>
+                <h3 class="product-name">{{ product.name }}</h3>
+        </a>
+            <div class="product-actions">
+                <a href="/sales/new" class="btn btn-primary" style="flex: 1;">
+                    <i data-lucide="shopping-cart" style="width: 18px;"></i>
+                    Vender
+                </a>
+                <a href="/products/{{ product.id }}/edit" class="btn btn-secondary btn-icon" title="Editar">
+                    <i data-lucide="edit-3" style="width: 18px;"></i>
+                </a>
+            </div>
+            
+            <div class="share-menu">
+                <button class="btn btn-secondary btn-icon" onclick="shareWhatsApp({{ product.id }})" title="Enviar Ficha">
+                    <i data-lucide="send" style="width: 18px; color: #16A34A;"></i>
+                </button>
+                <button class="btn btn-secondary btn-icon" onclick="shareGalleryWhatsApp({{ product.id }})" title="Enviar Galería">
+                    <i data-lucide="images" style="width: 18px; color: #2563EB;"></i>
+                </button>
+                <button class="btn btn-secondary btn-icon" onclick="copyImageLink({{ product.id }})" title="Copiar Link">
+                    <i data-lucide="link" style="width: 18px;"></i>
+                </button>
             </div>
         </div>
-        {% endfor %}
     </div>
-{% endif %}
+    {% endfor %}
+</div>
+
+<!-- Modal Compartir Catálogo -->
+<div id="share-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeShareModal()">
+            <i data-lucide="x"></i>
+        </span>
+        <h2 style="margin-bottom: 1rem;">Enviar Catálogo</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Ingresa el número de WhatsApp para enviar todos los productos.</p>
+        <div class="form-group">
+            <label class="form-label">Número de WhatsApp (con código de país)</label>
+            <input type="text" id="share-number" class="form-control" placeholder="Ej: 519XXXXXXXX">
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+            <button class="btn btn-secondary" onclick="closeShareModal()">Cancelar</button>
+            <button class="btn btn-primary" id="confirm-share-btn" onclick="confirmShareAll()">
+                Enviar ahora
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    function showSlide(productId, slideIndex) {
-        const slide = document.getElementById(`gallery-${productId}`);
-        const dots = document.querySelectorAll(`#dots-${productId} .dot`);
+    async function shareWhatsApp(productId) {
+        const number = prompt("Ingresa el número de WhatsApp (ej: 519XXXXXXXX):");
+        if (!number) return;
         
-        slide.style.transform = `translateX(-${slideIndex * 100}%)`;
-        
-        dots.forEach((dot, index) => {
-            if (index === slideIndex) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
-        });
-    }
-    function copyImageLink(productId) {
-        const url = `${window.location.origin}/products/${productId}/main-image`;
-        navigator.clipboard.writeText(url).then(() => {
-            alert("¡Link de imagen copiado al portapapeles!");
-        });
-    }
-
-    function shareWhatsApp(productId) {
-        const number = prompt("Ingresa el número de WhatsApp (con código de país, ej: 51987654321):");
-        if (number) {
-            fetch(`/products/${productId}/share?number=${number}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert("¡Producto enviado exitosamente por WhatsApp!");
-                    } else {
-                        alert("Error al enviar: " + (data.message || "Desconocido"));
-                    }
-                })
-                .catch(err => {
-                    alert("Ocurrió un error en la conexión.");
-                    console.error(err);
-                });
+        try {
+            const response = await fetch(`/products/${productId}/share?number=${number}`);
+            const data = await response.json();
+            alert(data.status === 'success' ? 'Ficha enviada correctamente' : 'Error al enviar');
+        } catch (error) {
+            alert('Error de conexión');
         }
     }
 
-    function shareAllWhatsApp() {
-        const number = prompt("Ingresa el número de WhatsApp para enviar TODO el catálogo (ej: 51987654321):");
-        if (number) {
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ Enviando...";
-            btn.disabled = true;
-
-            fetch(`/products/share-all?number=${number}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'completed') {
-                        alert("¡Catálogo enviado completamente!");
-                    } else {
-                        alert("Hubo un problema al enviar algunos productos.");
-                    }
-                })
-                .catch(err => {
-                    alert("Ocurrió un error en el servidor.");
-                })
-                .finally(() => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                });
-        }
-    }
     async function shareGalleryWhatsApp(productId) {
         const number = prompt("Ingresa el número de WhatsApp (ej: 519XXXXXXXX):");
         if (!number) return;
 
         try {
-            const response = await fetch(`/products/${productId}/share-gallery?number=${number}`, {
-                method: 'GET'
-            });
+            const response = await fetch(`/products/${productId}/share-gallery?number=${number}`);
             const data = await response.json();
-            if (data.status === 'success' || data.status === 'info') {
-                alert(data.message);
-            } else {
-                alert("Error: " + data.message);
-            }
+            alert(data.message);
         } catch (error) {
             alert("Error de conexión");
+        }
+    }
+
+    async function shareAllWhatsApp() {
+        document.getElementById('share-modal').style.display = 'flex';
+        lucide.createIcons();
+    }
+
+    function closeShareModal() {
+        document.getElementById('share-modal').style.display = 'none';
+    }
+
+    async function confirmShareAll() {
+        const number = document.getElementById('share-number').value;
+        if (!number) {
+            alert("Ingresa un número");
+            return;
+        }
+
+        const btn = document.getElementById('confirm-share-btn');
+        btn.disabled = true;
+        btn.innerText = "Enviando...";
+
+        try {
+            const response = await fetch(`/products/share-all?number=${number}`);
+            const data = await response.json();
+            alert("Proceso de envío completado");
+            closeShareModal();
+        } catch (error) {
+            alert("Error al enviar el catálogo");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Enviar ahora";
+        }
+    }
+
+    function copyImageLink(productId) {
+        const url = window.location.origin + `/products/${productId}/main-image`;
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Link de imagen copiado al portapapeles");
+        });
+    }
+
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+        const modal = document.getElementById('share-modal');
+        if (event.target == modal) {
+            closeShareModal();
         }
     }
 </script>

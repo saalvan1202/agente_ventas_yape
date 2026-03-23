@@ -100,6 +100,13 @@ async def edit_product_form(product_id: int, request: Request, db: Session = Dep
         raise HTTPException(status_code=404, detail="Product not found")
     return templates.TemplateResponse(request, "product_form.html", {"product": product})
 
+@app.get("/products/{product_id}", response_class=HTMLResponse)
+async def product_detail_view(product_id: int, request: Request, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return templates.TemplateResponse(request, "product_detail.html", {"product": product})
+
 @app.post("/products/{product_id}")
 async def update_product(
     product_id: int,
@@ -148,10 +155,73 @@ async def update_product(
     db.commit()
     return RedirectResponse(url="/", status_code=303)
 
+@app.delete("/products/images/{image_id}")
+async def delete_product_image(image_id: int, db: Session = Depends(get_db)):
+    img = db.query(models.ProductImage).filter(models.ProductImage.id == image_id).first()
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    # Prevenir eliminar la única imagen principal si se desea
+    # (Opcional, pero por ahora lo permitimos si el usuario elige otra)
+    
+    # Ruta física
+    file_path = f"static/{img.image_path}"
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    db.delete(img)
+    db.commit()
+    return {"status": "success", "message": "Imagen eliminada"}
+
 @app.get("/sales", response_class=HTMLResponse)
-async def list_sales(request: Request, db: Session = Depends(get_db)):
-    sales = db.query(models.Sale).order_by(models.Sale.created_at.desc()).all()
-    return templates.TemplateResponse(request, "sales.html", {"sales": sales})
+async def list_sales(
+    request: Request, 
+    start_date: str = None, 
+    end_date: str = None,
+    month: int = None,
+    year: int = None,
+    db: Session = Depends(get_db)
+):
+    from datetime import datetime
+    now = datetime.now()
+    
+    # Establecer valores por defecto si no hay filtros manuales
+    is_default = False
+    if not any([start_date, end_date, month, year]):
+        month = now.month
+        year = now.year
+        is_default = True
+        
+    query = db.query(models.Sale)
+    
+    if start_date:
+        query = query.filter(models.Sale.created_at >= start_date)
+    if end_date:
+        query = query.filter(models.Sale.created_at <= end_date)
+    if year:
+        from sqlalchemy import extract
+        query = query.filter(extract('year', models.Sale.created_at) == year)
+    if month:
+        from sqlalchemy import extract
+        query = query.filter(extract('month', models.Sale.created_at) == month)
+        
+    sales = query.order_by(models.Sale.created_at.desc()).all()
+    
+    # Calcular totales para el resumen
+    total_revenue = sum(s.total_amount for s in sales)
+    order_count = len(sales)
+    
+    return templates.TemplateResponse(request, "sales.html", {
+        "sales": sales,
+        "total_revenue": total_revenue,
+        "order_count": order_count,
+        "filters": {
+            "start_date": start_date,
+            "end_date": end_date,
+            "month": month,
+            "year": year
+        }
+    })
 
 @app.get("/sales/new", response_class=HTMLResponse)
 async def new_sale_form(request: Request, db: Session = Depends(get_db)):

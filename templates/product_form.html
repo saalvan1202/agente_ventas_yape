@@ -1,54 +1,165 @@
 {% extends "base.html" %}
 
 {% block title %}{% if product %}Editar{% else %}Nuevo{% endif %} Producto{% endblock %}
+{% block page_header %}{% if product %}Gestión de Producto{% else %}Nuevo Registro{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .image-preview-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .preview-thumb {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+    }
+
+    .thumb-wrapper {
+        position: relative;
+    }
+
+    .delete-photo-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 20px;
+        height: 20px;
+        background: #EF4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 10;
+        transition: transform 0.2s;
+    }
+
+    .delete-photo-btn:hover {
+        transform: scale(1.2);
+        background: #DC2626;
+    }
+
+    .main-preview-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .main-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: var(--radius-md);
+        object-fit: cover;
+        border: 2px solid var(--primary);
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 0 auto;">
-    <a href="/" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Volver</a>
+<div class="form-card animate-fade-in">
+    <div style="margin-bottom: 1.5rem;">
+        <a href="/" class="btn btn-secondary btn-icon">
+            <i data-lucide="arrow-left"></i>
+        </a>
+    </div>
+
     <div class="card">
-        <h1>{% if product %}Editar{% else %}Nuevo{% endif %} Producto</h1>
+        <h2 style="margin-bottom: 1.5rem;">{% if product %}Editar Detalles{% else %}Crear Nuevo Producto{% endif %}</h2>
+        
         <form action="{% if product %}/products/{{ product.id }}{% else %}/products{% endif %}" method="post" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="name">Nombre del Producto</label>
-                <input type="text" id="name" name="name" class="form-control" value="{{ product.name if product else '' }}" required>
+                <label class="form-label">Nombre Comercial</label>
+                <input type="text" name="name" class="form-control" value="{{ product.name if product else '' }}" placeholder="Nombre del producto" required>
             </div>
+
             <div class="form-group">
-                <label for="price">Precio (S/)</label>
-                <input type="number" id="price" name="price" class="form-control" step="0.01" value="{{ product.price if product else '' }}" required>
+                <label class="form-label">Precio de Venta (S/)</label>
+                <input type="number" name="price" class="form-control" step="0.01" value="{{ product.price if product else '' }}" placeholder="0.00" required>
             </div>
-            
+
+            <div class="receipt-divider" style="margin: 2rem 0;"></div>
+
             <div class="form-group">
-                <label for="main_image">{% if product %}Cambiar{% endif %} Imagen Principal</label>
+                <label class="form-label">Imagen Principal (Ficha Técnica)</label>
                 {% if product %}
                     {% set main_img = product.images|selectattr("is_main", "equalto", True)|first %}
                     {% if not main_img and product.images %}{% set main_img = product.images[0] %}{% endif %}
                     {% if main_img %}
-                        <div style="margin-bottom: 0.5rem;">
-                            <img src="/static/{{ main_img.image_path }}" style="width: 100px; border-radius: 0.5rem; border: 1px solid var(--border);">
+                        <div class="main-preview-container" id="img-container-{{ main_img.id }}">
+                            <img src="/static/{{ main_img.image_path }}" class="main-preview">
+                            <button type="button" class="delete-photo-btn" onclick="deletePhoto({{ main_img.id }})" title="Eliminar imagen">×</button>
                         </div>
                     {% endif %}
                 {% endif %}
-                <input type="file" id="main_image" name="main_image" class="form-control" accept="image/*" {% if not product %}name="main_image" required{% endif %}>
-                <small style="color: var(--text-muted);">Esta es la imagen que se mostrará primero y se enviará por WhatsApp.</small>
+                <input type="file" name="main_image" class="form-control" accept="image/*" {% if not product %}required{% endif %}>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Esta imagen se utilizará para compartir el producto por WhatsApp.</p>
             </div>
 
             <div class="form-group">
-                <label for="gallery_images">{% if product %}Añadir más a la{% else %}Subir{% endif %} Galería</label>
-                {% if product and product.images|length > 1 %}
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                <label class="form-label">Galería de Imágenes (Opcional)</label>
+                {% if product and product.images|length > 0 %}
+                    <div class="image-preview-group">
                         {% for img in product.images if not img.is_main %}
-                            <img src="/static/{{ img.image_path }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 0.25rem; border: 1px solid var(--border);">
+                            <div class="thumb-wrapper" id="img-container-{{ img.id }}">
+                                <img src="/static/{{ img.image_path }}" class="preview-thumb">
+                                <button type="button" class="delete-photo-btn" onclick="deletePhoto({{ img.id }})">×</button>
+                            </div>
                         {% endfor %}
                     </div>
                 {% endif %}
-                <input type="file" id="gallery_images" name="gallery_images" class="form-control" accept="image/*" multiple>
-                <small style="color: var(--text-muted);">Puedes seleccionar varias imágenes para la galería.</small>
+                <input type="file" name="gallery_images" class="form-control" accept="image/*" multiple style="margin-top: 1rem;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Selecciona una o varias fotos adicionales para mostrar en el catálogo detallado.</p>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                {% if product %}Actualizar{% else %}Guardar{% endif %} Producto
-            </button>
+            <div style="margin-top: 2.5rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+                    <i data-lucide="save"></i>
+                    {% if product %}Actualizar Registro{% else %}Confirmar y Guardar{% endif %}
+                </button>
+            </div>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function deletePhoto(imageId) {
+        if (!confirm('¿Estás seguro de eliminar esta foto?')) return;
+        
+        try {
+            const response = await fetch(`/products/images/${imageId}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                const container = document.getElementById(`img-container-${imageId}`);
+                if (container) {
+                    container.remove();
+                }
+            } else {
+                alert('Error al eliminar la imagen');
+            }
+        } catch (error) {
+            alert('Error de conexión');
+        }
+    }
+</script>
 {% endblock %}

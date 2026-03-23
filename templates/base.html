@@ -3,22 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yape Sales Agent - {% block title %}{% endblock %}</title>
+    <title>Yape Agent - {% block title %}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
-            --primary: #7422ed;
-            --primary-light: #9d50ff;
-            --secondary: #ff007f;
-            --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg: #F8FAFC;
+            --sidebar-bg: #FFFFFF;
+            --primary: #2563EB;
+            --primary-light: #EFF6FF;
+            --accent: #0EA5E9;
+            --text-main: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #94A3B8;
+            --border: #E2E8F0;
+            --sidebar-width: 260px;
+            --radius-lg: 1rem;
+            --radius-md: 0.75rem;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
         * {
@@ -30,191 +35,272 @@
 
         body {
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(116, 34, 237, 0.15) 0, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(255, 0, 127, 0.1) 0, transparent 50%);
-            color: var(--text);
+            color: var(--text-main);
             min-height: 100vh;
-            line-height: 1.6;
+            display: flex;
         }
 
-        .navbar {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            position: sticky;
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
             top: 0;
-            z-index: 100;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            display: flex;
             align-items: center;
+            gap: 0.75rem;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-decoration: none;
-        }
-
-        .nav-links {
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 10px;
             display: flex;
-            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            color: white;
         }
 
-        .nav-link {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
         }
 
-        .nav-link:hover, .nav-link.active {
-            color: var(--text);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
+        .sidebar-nav {
+            flex: 1;
             padding: 0 1rem;
         }
 
-        h1, h2, h3 {
-            margin-bottom: 1.5rem;
-            font-weight: 600;
+        .nav-group {
+            margin-bottom: 2rem;
         }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-            outline: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(116, 34, 237, 0.4);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(116, 34, 237, 0.5);
-        }
-
-        .btn-secondary {
-            background: var(--glass-bg);
-            color: var(--text);
-            border: 1px solid var(--glass-border);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
+        .nav-label {
             font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
-        }
-
-        .badge-success {
-            background: rgba(34, 197, 94, 0.1);
-            color: #4ade80;
-            border: 1px solid rgba(34, 197, 94, 0.2);
-        }
-
-        footer {
-            margin-top: 4rem;
-            padding: 2rem;
-            text-align: center;
             color: var(--text-muted);
-            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            padding-left: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            margin-bottom: 0.25rem;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .nav-item i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
             border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
         }
 
-        /* Micro-animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease forwards;
+        .top-bar {
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 2rem;
+            flex: 1;
+        }
+
+        /* Common Components */
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg);
+            border-color: var(--text-muted);
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #DCFCE7; color: #166534; }
+        .badge-pending { background: #FEF9C3; color: #854D0E; }
+
+        /* Forms */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrapper { margin-left: 0; }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar">
-        <a href="/" class="logo">YAPE AGENT</a>
-        <div class="nav-links">
-            <a href="/" class="nav-link">Productos</a>
-            <a href="/sales" class="nav-link">Ventas</a>
-            <a href="/sales/new" class="nav-link">Nueva Venta</a>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <i data-lucide="zap"></i>
+            </div>
+            <span class="logo-text">YAPE AGENT</span>
         </div>
-    </nav>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-group">
+                <p class="nav-label">General</p>
+                <a href="/" class="nav-item {% if request.url.path == '/' %}active{% endif %}">
+                    <i data-lucide="package"></i>
+                    Catálogo
+                </a>
+                <a href="/sales" class="nav-item {% if '/sales' in request.url.path and '/new' not in request.url.path %}active{% endif %}">
+                    <i data-lucide="history"></i>
+                    Ventas
+                </a>
+                <a href="/sales/new" class="nav-item {% if '/sales/new' in request.url.path %}active{% endif %}">
+                    <i data-lucide="shopping-cart"></i>
+                    Nueva Venta (Caja)
+                </a>
+            </div>
 
-    <div class="container animate-fade-in">
-        {% block content %}{% endblock %}
-    </div>
+            <div class="nav-group">
+                <p class="nav-label">Gestión</p>
+                <a href="/products/new" class="nav-item {% if '/products/new' in request.url.path %}active{% endif %}">
+                    <i data-lucide="plus-circle"></i>
+                    Añadir Producto
+                </a>
+            </div>
+        </nav>
 
-    <footer>
-        &copy; 2026 Yape Sales Agent. Diseñado con ❤️ para Shande Alvan.
-    </footer>
+        <div class="sidebar-footer">
+            <p>&copy; 2026 Yape Sales Agent</p>
+            <p>Hecho con precisión</p>
+        </div>
+    </aside>
 
+    <main class="main-wrapper">
+        <header class="top-bar">
+            <h1 class="page-title">{% block page_header %}Dashboard{% endblock %}</h1>
+            <div class="user-info" style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 0.9rem; font-weight: 500;">Admin</span>
+                <div style="width: 35px; height: 35px; background: #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="user" style="width: 18px; color: #64748B;"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
