@@ -376,7 +376,7 @@ async def share_product_wsp(product_id: int, number: str, request: Request, db: 
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.get("/products/share-gallery/{product_id}")
+@app.get("/products/share-gallery")
 async def share_product_gallery_wsp(product_id: int, number: str, db: Session = Depends(get_db)):
     import requests
     import base64
