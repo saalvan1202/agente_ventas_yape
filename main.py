@@ -44,6 +44,123 @@ class SaleItemSchema(BaseModel):
 class SaleCreateSchema(BaseModel):
     items: List[SaleItemSchema]
 
+@app.get("/products/share-all")
+async def share_all_products_wsp(number: str, db: Session = Depends(get_db)):
+    import requests
+    import base64
+    products = db.query(models.Product).all()
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+    
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODU3MyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.dKmKFEJ438eSF6gx4L52asNttTiVEbBd9RMxYj3GyE0"
+    instance_name = os.getenv("WSP_INSTANCE", "default-instance")
+    url = f"https://apiwsp.factiliza.com/v1/message/sendmedia/{instance_name}"
+    
+    responses = []
+    for product in products:
+        if not product.images:
+            print("sin imagen", product.name)
+            continue
+            
+        image_path = f"static/{product.images[0].image_path}"
+        if not os.path.exists(image_path):
+            print("no existe la imagen", image_path)
+            continue
+            
+        with open(image_path, "rb") as img_file:
+            b64_string = base64.b64encode(img_file.read()).decode('utf-8')
+            
+        caption = f"Código del producto: {product.id}\n🛍️ *{product.name}*\n💰 Precio: S/ {product.price:.2f}"
+        
+        payload = {
+            "number": number,
+            "mediatype": "image",
+            "media": b64_string,
+            "filename": f"{product.name}.jpg",
+            "caption": caption
+        }
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            res = requests.post(url, json=payload, headers=headers)
+            responses.append({"product": product.name, "response": res.json()})
+        except Exception as e:
+            responses.append({"product": product.name, "error": str(e)})
+            
+    return {"status": "completed", "results": responses}
+@app.get("/products/share-gallery")
+async def share_product_gallery_wsp(product_id: int, number: str, db: Session = Depends(get_db)):
+    import requests
+    import base64
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product or not product.images:
+        raise HTTPException(status_code=404, detail="Product or images not found")
+    
+    # Filtrar solo imágenes que NO son principales
+    gallery_images = [img for img in product.images if not img.is_main]
+    
+    if not gallery_images:
+        return {"status": "info", "message": "El producto no tiene imágenes adicionales en la galería"}
+
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODU3MyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.dKmKFEJ438eSF6gx4L52asNttTiVEbBd9RMxYj3GyE0"
+    instance_name = os.getenv("WSP_INSTANCE", "default-instance")
+    url = f"https://apiwsp.factiliza.com/v1/message/sendmedia/{instance_name}"
+    
+    sent_count = 0
+    for img in gallery_images:
+        image_path = f"static/{img.image_path}"
+        if os.path.exists(image_path):
+            with open(image_path, "rb") as image_file:
+                b64_string = base64.b64encode(image_file.read()).decode('utf-8')
+            
+            payload = {
+                "number": number,
+                "mediatype": "image",
+                "media": b64_string,
+                "filename": f"{product.name}_gal_{sent_count+1}.jpg",
+                "caption": f"🖼️ Galería de {product.name} ({sent_count+1}/{len(gallery_images)})"
+            }
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            
+            try:
+                requests.post(url, json=payload, headers=headers)
+                sent_count += 1
+            except:
+                pass
+                
+    return {"status": "success", "message": f"Se enviaron {sent_count} imágenes de la galería"}
+
+@app.get("/api/products")
+async def api_get_products(request: Request, db: Session = Depends(get_db)):
+    products = db.query(models.Product).all()
+    base_url = str(request.base_url).rstrip('/')
+    result = []
+    for p in products:
+        result.append({
+            "id": p.id,
+            "name": p.name,
+            "price": p.price,
+            "images": [f"{base_url}/static/{img.image_path}" for img in p.images]
+        })
+    return result
+
+@app.get("/sales/{sale_id}", response_class=HTMLResponse)
+async def sale_detail_view(sale_id: int, request: Request, db: Session = Depends(get_db)):
+    sale = db.query(models.Sale).filter(models.Sale.id == sale_id).first()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    return templates.TemplateResponse(request, "sale_detail.html", {"sale": sale})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, db: Session = Depends(get_db)):
     products = db.query(models.Product).all()
@@ -356,54 +473,6 @@ async def get_main_image(product_id: int, db: Session = Depends(get_db)):
     
     raise HTTPException(status_code=404, detail="File not found")
 
-@app.get("/products/share-all")
-async def share_all_products_wsp(number: str, db: Session = Depends(get_db)):
-    import requests
-    import base64
-    products = db.query(models.Product).all()
-    if not products:
-        raise HTTPException(status_code=404, detail="No products found")
-    
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODU3MyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.dKmKFEJ438eSF6gx4L52asNttTiVEbBd9RMxYj3GyE0"
-    instance_name = os.getenv("WSP_INSTANCE", "default-instance")
-    url = f"https://apiwsp.factiliza.com/v1/message/sendmedia/{instance_name}"
-    
-    responses = []
-    for product in products:
-        if not product.images:
-            print("sin imagen", product.name)
-            continue
-            
-        image_path = f"static/{product.images[0].image_path}"
-        if not os.path.exists(image_path):
-            print("no existe la imagen", image_path)
-            continue
-            
-        with open(image_path, "rb") as img_file:
-            b64_string = base64.b64encode(img_file.read()).decode('utf-8')
-            
-        caption = f"Código del producto: {product.id}\n🛍️ *{product.name}*\n💰 Precio: S/ {product.price:.2f}"
-        
-        payload = {
-            "number": number,
-            "mediatype": "image",
-            "media": b64_string,
-            "filename": f"{product.name}.jpg",
-            "caption": caption
-        }
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
-        
-        try:
-            res = requests.post(url, json=payload, headers=headers)
-            responses.append({"product": product.name, "response": res.json()})
-        except Exception as e:
-            responses.append({"product": product.name, "error": str(e)})
-            
-    return {"status": "completed", "results": responses}
-
 @app.get("/products/{product_id}/share")
 async def share_product_wsp(product_id: int, number: str, request: Request, db: Session = Depends(get_db)):
     import requests
@@ -446,72 +515,4 @@ async def share_product_wsp(product_id: int, number: str, request: Request, db: 
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.get("/products/share-gallery")
-async def share_product_gallery_wsp(product_id: int, number: str, db: Session = Depends(get_db)):
-    import requests
-    import base64
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not product or not product.images:
-        raise HTTPException(status_code=404, detail="Product or images not found")
-    
-    # Filtrar solo imágenes que NO son principales
-    gallery_images = [img for img in product.images if not img.is_main]
-    
-    if not gallery_images:
-        return {"status": "info", "message": "El producto no tiene imágenes adicionales en la galería"}
 
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODU3MyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6ImNvbnN1bHRvciJ9.dKmKFEJ438eSF6gx4L52asNttTiVEbBd9RMxYj3GyE0"
-    instance_name = os.getenv("WSP_INSTANCE", "default-instance")
-    url = f"https://apiwsp.factiliza.com/v1/message/sendmedia/{instance_name}"
-    
-    sent_count = 0
-    for img in gallery_images:
-        image_path = f"static/{img.image_path}"
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as image_file:
-                b64_string = base64.b64encode(image_file.read()).decode('utf-8')
-            
-            payload = {
-                "number": number,
-                "mediatype": "image",
-                "media": b64_string,
-                "filename": f"{product.name}_gal_{sent_count+1}.jpg",
-                "caption": f"🖼️ Galería de {product.name} ({sent_count+1}/{len(gallery_images)})"
-            }
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
-            }
-            
-            try:
-                requests.post(url, json=payload, headers=headers)
-                sent_count += 1
-            except:
-                pass
-                
-    return {"status": "success", "message": f"Se enviaron {sent_count} imágenes de la galería"}
-
-@app.get("/api/products")
-async def api_get_products(request: Request, db: Session = Depends(get_db)):
-    products = db.query(models.Product).all()
-    base_url = str(request.base_url).rstrip('/')
-    result = []
-    for p in products:
-        result.append({
-            "id": p.id,
-            "name": p.name,
-            "price": p.price,
-            "images": [f"{base_url}/static/{img.image_path}" for img in p.images]
-        })
-    return result
-
-@app.get("/sales/{sale_id}", response_class=HTMLResponse)
-async def sale_detail_view(sale_id: int, request: Request, db: Session = Depends(get_db)):
-    sale = db.query(models.Sale).filter(models.Sale.id == sale_id).first()
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    return templates.TemplateResponse(request, "sale_detail.html", {"sale": sale})
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -43,59 +43,68 @@
         justify-content: center;
     }
 
-    .day-section {
-        margin-bottom: 2.5rem;
-    }
-
-    .day-header {
+    .day-group-header {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 2.5rem 0 1rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        gap: 0.75rem;
     }
 
-    .day-title {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: var(--primary);
-        text-transform: capitalize;
-    }
-
-    .day-line {
+    .day-group-header::after {
+        content: '';
         flex: 1;
-        height: 2px;
-        background: var(--primary-light);
-        border-radius: 2px;
+        height: 1px;
+        background: var(--border);
     }
 
-    .sales-list-card {
+    .sales-list-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .sale-item-card {
         background: white;
+        padding: 1.25rem;
         border-radius: var(--radius-lg);
         border: 1px solid var(--border);
-        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
     }
 
-    .table {
-        width: 100%;
-        border-collapse: collapse;
+    .sale-item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--primary-light);
     }
 
-    .table th {
-        background: #F8FAFC;
-        padding: 1rem;
-        text-align: left;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
+    .sale-main-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .sale-id {
+        font-weight: 800;
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+
+    .sale-time {
         color: var(--text-muted);
-        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
     }
 
-    .table td {
-        padding: 1rem;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.95rem;
-        color: var(--text-secondary);
+    .sale-amount {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: var(--text-primary);
     }
 
     .status-badge {
@@ -105,66 +114,80 @@
         padding: 0.35rem 0.75rem;
         border-radius: 9999px;
         font-size: 0.75rem;
-        font-weight: 600;
+        font-weight: 700;
     }
 
     .status-paid { background: #DCFCE7; color: #15803d; }
     .status-pending { background: #FEE2E2; color: #B91C1C; }
 
-    /* Modal Mejorado */
+    /* Modal Pro Max */
     .modal {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(12px);
         z-index: 2000;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
+        padding: 1.5rem;
     }
 
-    .modal-content {
-        background: white;
-        border-radius: var(--radius-xl);
+    .modal-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 2rem;
         width: 100%;
-        max-width: 600px;
+        max-width: 550px;
         max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-        position: relative;
-        padding: 2.5rem 2rem; /* Aumentado el padding */
+        overflow: hidden;
+        box-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    .modal-close-trigger {
-        position: absolute;
-        top: 1.5rem;
-        right: 1.5rem;
-        background: var(--primary-light);
-        color: var(--primary);
+    .modal-header {
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        font-weight: 800;
+        font-size: 1.25rem;
+    }
+
+    .modal-close-btn {
+        background: rgba(255, 255, 255, 0.2);
         border: none;
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s;
-        z-index: 10;
+        transition: background 0.2s;
     }
 
-    .modal-close-trigger:hover {
-        background: var(--primary);
-        color: white;
-        transform: rotate(90deg);
+    .modal-close-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-content {
+        padding: 2.5rem; /* Más padding como pidió el usuario */
+        overflow-y: auto;
     }
 
     #modal-body .receipt-card {
         border: none;
-        box-shadow: none;
         padding: 0;
         margin: 0;
+        box-shadow: none;
     }
 </style>
 {% endblock %}
@@ -232,68 +255,55 @@
 {% else %}
     {% set current_date = None %}
     {% for sale in sales %}
-        {% set sale_date = sale.created_at.strftime('%d %B %Y') %}
+        {% set sale_date = sale.created_at.strftime('%d/%m/%Y') %}
         
         {% if sale_date != current_date %}
             {% if not loop.first %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                </div> <!-- Close sales-list-wrapper -->
             {% endif %}
             
-            <div class="day-section">
-                <div class="day-header">
-                    <div class="day-title">{{ sale_date }}</div>
-                    <div class="day-line"></div>
-                </div>
-                <div class="sales-list-card">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Hora</th>
-                                <th>Orden</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                                <th style="text-align: right;">Detalle</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            <div class="day-group-header">
+                <i data-lucide="calendar" style="width: 20px; color: var(--primary);"></i>
+                {{ sale_date }}
+            </div>
+            <div class="sales-list-wrapper">
             {% set current_date = sale_date %}
         {% endif %}
-                        <tr>
-                            <td style="color: var(--text-muted);">{{ sale.created_at.strftime('%H:%M') }}</td>
-                            <td style="font-weight: 600;">#{{ sale.id }}</td>
-                            <td style="font-weight: 700; color: var(--primary);">S/ {{ "{:.2f}".format(sale.total_amount) }}</td>
-                            <td>
-                                {% if sale.payments %}
-                                    <span class="status-badge status-paid">PAGADO</span>
-                                {% else %}
-                                    <span class="status-badge status-pending">PENDIENTE</span>
-                                {% endif %}
-                            </td>
-                            <td style="text-align: right;">
-                                <button onclick="viewSaleDetails({{ sale.id }})" class="btn btn-secondary btn-icon btn-sm">
-                                    <i data-lucide="external-link" style="width: 16px;"></i>
-                                </button>
-                            </td>
-                        </tr>
-        {% if loop.last %}
-                        </tbody>
-                    </table>
-                </div>
+        
+        <div class="sale-item-card" onclick="viewSaleDetails({{ sale.id }})">
+            <div class="sale-main-info">
+                <span class="sale-time">{{ sale.created_at.strftime('%H:%M') }}</span>
+                <span class="sale-id">ID #{{ sale.id }}</span>
+                {% if sale.payments %}
+                    <span class="status-badge status-paid">PAGADO</span>
+                {% else %}
+                    <span class="status-badge status-pending">PENDIENTE</span>
+                {% endif %}
             </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span class="sale-amount">S/ {{ "{:.2f}".format(sale.total_amount) }}</span>
+                <i data-lucide="chevron-right" style="color: var(--text-muted); width: 18px;"></i>
+            </div>
+        </div>
+        
+        {% if loop.last %}
+            </div> <!-- Close last sales-list-wrapper -->
         {% endif %}
     {% endfor %}
 {% endif %}
 
-<!-- Modal Detalle -->
+<!-- Modal Pro Max -->
 <div id="sale-modal" class="modal">
-    <div class="modal-content">
-        <button class="modal-close-trigger" onclick="closeModal()">
-            <i data-lucide="x"></i>
-        </button>
-        <div id="modal-body"></div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <span class="modal-title">Detalle de Operación</span>
+            <button class="modal-close-btn" onclick="closeModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-content" id="modal-body">
+            <!-- Content loaded via AJAX -->
+        </div>
     </div>
 </div>
 
@@ -305,7 +315,7 @@
         const modal = document.getElementById('sale-modal');
         const body = document.getElementById('modal-body');
         modal.style.display = 'flex';
-        body.innerHTML = '<div style="padding: 2rem; text-align: center;"><p>Cargando información del pedido...</p></div>';
+        body.innerHTML = '<div style="padding: 2rem; text-align: center;"><p>Cargando información segura...</p></div>';
         
         try {
             const response = await fetch(`/sales/${saleId}`);
@@ -316,17 +326,19 @@
             const receiptContent = doc.querySelector('.receipt-card');
             
             if (receiptContent) {
-                // Limpiar botones de navegación externos para el modal
-                const navElements = receiptContent.querySelectorAll('a, .btn-group');
-                navElements.forEach(el => el.remove());
+                // Limpiar elementos no deseados para la vista modal
+                const navLinks = receiptContent.querySelectorAll('a, button');
+                navLinks.forEach(el => {
+                    if (!el.onclick) el.remove(); // Mantener solo botones con acciones JS si existieran
+                });
                 
                 body.innerHTML = receiptContent.outerHTML;
                 lucide.createIcons();
             } else {
-                body.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--danger);">No se pudo cargar el detalle.</div>';
+                body.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--danger);">Error de formato en el recibo.</div>';
             }
         } catch (error) {
-            body.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--danger);">Error de conexión al servidor.</div>';
+            body.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--danger);">Sin conexión con el sistema de ventas.</div>';
         }
     }
 
