@@ -1,29 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}Nuevo Producto{% endblock %}
+{% block title %}{% if product %}Editar{% else %}Nuevo{% endif %} Producto{% endblock %}
 
 {% block content %}
 <div style="max-width: 600px; margin: 0 auto;">
     <a href="/" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Volver</a>
     <div class="card">
-        <h1>Registrar Producto</h1>
-        <form action="/products" method="post" enctype="multipart/form-data">
+        <h1>{% if product %}Editar{% else %}Nuevo{% endif %} Producto</h1>
+        <form action="{% if product %}/products/{{ product.id }}{% else %}/products{% endif %}" method="post" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="name">Nombre del Producto</label>
-                <input type="text" id="name" name="name" class="form-control" placeholder="Ej. Zapatillas Nike Air" required>
+                <input type="text" id="name" name="name" class="form-control" value="{{ product.name if product else '' }}" required>
             </div>
             <div class="form-group">
                 <label for="price">Precio (S/)</label>
-                <input type="number" step="0.01" id="price" name="price" class="form-control" placeholder="0.00" required>
+                <input type="number" id="price" name="price" class="form-control" step="0.01" value="{{ product.price if product else '' }}" required>
             </div>
+            
             <div class="form-group">
-                <label for="images">Imágenes (Puedes seleccionar varias)</label>
-                <input type="file" id="images" name="images" class="form-control" accept="image/*" multiple required>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Selecciona una o más fotos para la galería del producto.</p>
+                <label for="main_image">{% if product %}Cambiar{% endif %} Imagen Principal</label>
+                {% if product %}
+                    {% set main_img = product.images|selectattr("is_main", "equalto", True)|first %}
+                    {% if not main_img and product.images %}{% set main_img = product.images[0] %}{% endif %}
+                    {% if main_img %}
+                        <div style="margin-bottom: 0.5rem;">
+                            <img src="/static/{{ main_img.image_path }}" style="width: 100px; border-radius: 0.5rem; border: 1px solid var(--border);">
+                        </div>
+                    {% endif %}
+                {% endif %}
+                <input type="file" id="main_image" name="main_image" class="form-control" accept="image/*" {% if not product %}name="main_image" required{% endif %}>
+                <small style="color: var(--text-muted);">Esta es la imagen que se mostrará primero y se enviará por WhatsApp.</small>
             </div>
-            <div style="margin-top: 2rem;">
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar Producto</button>
+
+            <div class="form-group">
+                <label for="gallery_images">{% if product %}Añadir más a la{% else %}Subir{% endif %} Galería</label>
+                {% if product and product.images|length > 1 %}
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                        {% for img in product.images if not img.is_main %}
+                            <img src="/static/{{ img.image_path }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 0.25rem; border: 1px solid var(--border);">
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <input type="file" id="gallery_images" name="gallery_images" class="form-control" accept="image/*" multiple>
+                <small style="color: var(--text-muted);">Puedes seleccionar varias imágenes para la galería.</small>
             </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                {% if product %}Actualizar{% else %}Guardar{% endif %} Producto
+            </button>
         </form>
     </div>
 </div>

@@ -74,5 +74,55 @@
             alert("Debe haber al menos un producto en la venta.");
         }
     }
+
+    document.getElementById('sale-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const rows = document.querySelectorAll('.product-select-row');
+        const items = [];
+        
+        rows.forEach(row => {
+            const productId = row.querySelector('select[name="product_ids"]').value;
+            const quantity = row.querySelector('input[name="quantities"]').value;
+            if (productId) {
+                items.push({
+                    product_id: parseInt(productId),
+                    quantity: parseInt(quantity)
+                });
+            }
+        });
+
+        if (items.length === 0) {
+            alert("Selecciona al menos un producto.");
+            return;
+        }
+
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerText = "Procesando...";
+
+        try {
+            const response = await fetch('/sales', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ items: items })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                window.location.href = data.redirect_url;
+            } else {
+                alert("Error al crear la venta: " + (data.detail || "Error desconocido"));
+                btn.disabled = false;
+                btn.innerText = "Continuar al Pago";
+            }
+        } catch (error) {
+            alert("Error de conexión al servidor.");
+            btn.disabled = false;
+            btn.innerText = "Continuar al Pago";
+        }
+    });
 </script>
 {% endblock %}

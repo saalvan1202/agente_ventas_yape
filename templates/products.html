@@ -140,12 +140,18 @@
                     <h3 class="product-name">{{ product.name }}</h3>
                     <p class="product-price">S/ {{ "{:.2f}".format(product.price) }}</p>
                 </div>
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <a href="/sales/new" class="btn btn-secondary" style="flex: 1; text-align: center;">Vender</a>
+                    <a href="/products/{{ product.id }}/edit" class="btn btn-secondary" title="Editar Producto" style="display: flex; align-items: center; justify-content: center;">
+                        ✏️
+                    </a>
                     <button class="btn btn-secondary" onclick="shareWhatsApp({{ product.id }})" title="Enviar por WhatsApp" style="background: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: rgba(34, 197, 94, 0.3);">
-                        WhatsApp
+                        Yape
                     </button>
-                    <button class="btn btn-secondary" onclick="copyImageLink({{ product.id }})" title="Copiar link de imagen">
+                    <button class="btn btn-secondary" onclick="shareGalleryWhatsApp({{ product.id }})" title="Enviar Galería" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">
+                        Galería
+                    </button>
+                    <button class="btn btn-secondary" onclick="copyImageLink({{ product.id }})" title="Copiar link de imagen" style="display: flex; align-items: center; justify-content: center;">
                         🔗
                     </button>
                 </div>
@@ -222,6 +228,24 @@
                     btn.innerText = originalText;
                     btn.disabled = false;
                 });
+        }
+    }
+    async function shareGalleryWhatsApp(productId) {
+        const number = prompt("Ingresa el número de WhatsApp (ej: 519XXXXXXXX):");
+        if (!number) return;
+
+        try {
+            const response = await fetch(`/products/${productId}/share-gallery?number=${number}`, {
+                method: 'GET'
+            });
+            const data = await response.json();
+            if (data.status === 'success' || data.status === 'info') {
+                alert(data.message);
+            } else {
+                alert("Error: " + data.message);
+            }
+        } catch (error) {
+            alert("Error de conexión");
         }
     }
 </script>
