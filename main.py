@@ -196,7 +196,7 @@ async def share_all_products_wsp(number: str, db: Session = Depends(get_db)):
         with open(image_path, "rb") as img_file:
             b64_string = base64.b64encode(img_file.read()).decode('utf-8')
             
-        caption = f"🛍️ *{product.name}*\n💰 Precio: S/ {product.price:.2f}"
+        caption = f"Código del producto: {product.id}\n🛍️ *{product.name}*\n💰 Precio: S/ {product.price:.2f}"
         
         payload = {
             "number": number,
