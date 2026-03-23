@@ -25,11 +25,11 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, db: Session = Depends(get_db)):
     products = db.query(models.Product).all()
-    return templates.TemplateResponse(name="products.html", context={"request": request, "products": products})
+    return templates.TemplateResponse(request, "products.html", {"products": products})
 
 @app.get("/products/new", response_class=HTMLResponse)
 async def new_product_form(request: Request):
-    return templates.TemplateResponse(name="product_form.html", context={"request": request})
+    return templates.TemplateResponse(request, "product_form.html")
 
 @app.post("/products")
 async def create_product(
@@ -60,12 +60,12 @@ async def create_product(
 @app.get("/sales", response_class=HTMLResponse)
 async def list_sales(request: Request, db: Session = Depends(get_db)):
     sales = db.query(models.Sale).order_by(models.Sale.created_at.desc()).all()
-    return templates.TemplateResponse(name="sales.html", context={"request": request, "sales": sales})
+    return templates.TemplateResponse(request, "sales.html", {"sales": sales})
 
 @app.get("/sales/new", response_class=HTMLResponse)
 async def new_sale_form(request: Request, db: Session = Depends(get_db)):
     products = db.query(models.Product).all()
-    return templates.TemplateResponse(name="sale_form.html", context={"request": request, "products": products})
+    return templates.TemplateResponse(request, "sale_form.html", {"products": products})
 
 @app.post("/sales")
 async def create_sale(
@@ -109,8 +109,7 @@ async def payment_form(sale_id: int, request: Request, db: Session = Depends(get
     total_paid = sum(p.total_paid for p in sale.payments)
     balance = sale.total_amount - total_paid
     
-    return templates.TemplateResponse(name="payment_form.html", context={
-        "request": request, 
+    return templates.TemplateResponse(request, "payment_form.html", {
         "sale": sale, 
         "balance": balance
     })
@@ -278,7 +277,7 @@ async def sale_detail_view(sale_id: int, request: Request, db: Session = Depends
     sale = db.query(models.Sale).filter(models.Sale.id == sale_id).first()
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
-    return templates.TemplateResponse(name="sale_detail.html", context={"request": request, "sale": sale})
+    return templates.TemplateResponse(request, "sale_detail.html", {"sale": sale})
 
 if __name__ == "__main__":
     import uvicorn
