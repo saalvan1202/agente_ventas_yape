@@ -150,6 +150,11 @@ async def api_get_products(request: Request, db: Session = Depends(get_db)):
         })
     return result
 
+@app.get("/sales/new", response_class=HTMLResponse)
+async def new_sale_form(request: Request, db: Session = Depends(get_db)):
+    products = db.query(models.Product).all()
+    return templates.TemplateResponse(request, "sale_form.html", {"products": products})
+
 @app.get("/sales/{sale_id}", response_class=HTMLResponse)
 async def sale_detail_view(sale_id: int, request: Request, db: Session = Depends(get_db)):
     sale = db.query(models.Sale).filter(models.Sale.id == sale_id).first()
@@ -340,10 +345,6 @@ async def list_sales(
         }
     })
 
-@app.get("/sales/new", response_class=HTMLResponse)
-async def new_sale_form(request: Request, db: Session = Depends(get_db)):
-    products = db.query(models.Product).all()
-    return templates.TemplateResponse(request, "sale_form.html", {"products": products})
 
 @app.post("/sales")
 async def create_sale(
